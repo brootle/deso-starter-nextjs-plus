@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { Page } from '@/components/Page';
 
 import { SettingsPostsClient } from './SettingsPostsClient';

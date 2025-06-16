@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { Page } from '@/components/Page';
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { PostsPageClient } from './PostsPageClient';
