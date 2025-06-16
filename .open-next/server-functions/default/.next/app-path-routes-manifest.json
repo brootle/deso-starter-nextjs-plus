@@ -1,0 +1,14 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/manifest.webmanifest/route": "/manifest.webmanifest",
+  "/@modal/(.)compose/post/page": "/(.)compose/post",
+  "/[username]/feed/page": "/[username]/feed",
+  "/[username]/settings/posts/page": "/[username]/settings/posts",
+  "/[username]/notifications/page": "/[username]/notifications",
+  "/compose/post/page": "/compose/post",
+  "/page": "/",
+  "/[username]/posts/page": "/[username]/posts",
+  "/test-stuff/page": "/test-stuff",
+  "/[username]/posts/[posthash]/page": "/[username]/posts/[posthash]",
+  "/[username]/page": "/[username]"
+}
