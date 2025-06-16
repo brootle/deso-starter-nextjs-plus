@@ -1,8 +1,15 @@
+// This file is used to configure the Cloudflare Workers environment for the Open Next project.
+// It specifies the main entry point, compatibility date, and assets directory.
+// The compatibility flags ensure that the worker runs with the correct Node.js compatibility settings.
 {
+  "main": ".open-next/worker.js",
   "name": "deso-starter",
-  "compatibility_date": "2025-06-15",
+  "compatibility_date": "2025-03-25",
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "pages_build_output_dir": ".vercel/output/static"
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  }
 }
