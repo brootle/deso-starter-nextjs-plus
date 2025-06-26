@@ -9,11 +9,15 @@ import { queryKeys } from '@/queries';
 
 import { UserQuickLinks } from '@/components/UserQuickLinks';
 
+import { useAuth } from '@/context/AuthContext';
+
 import styles from './page.module.css';
 
 const POSTS_PER_PAGE = 10;
 
 export const PostsPageClient = ({ rawParam }) => {
+  const { userPublicKey } = useAuth();
+
   const isPublicKey = isMaybePublicKey(rawParam);
   const lookupKey = isPublicKey
     ? rawParam
@@ -23,7 +27,7 @@ export const PostsPageClient = ({ rawParam }) => {
 
   const { getSingleProfile, getPostsForPublicKey } = useDeSoApi();
 
-  // Hydrated profile query
+  // Profile query (hydrated from server or fetched client-side)
   const {
     data: userProfile,
     isLoading: isProfileLoading,
@@ -44,10 +48,9 @@ export const PostsPageClient = ({ rawParam }) => {
 
       return response.data.Profile;
     },
-    // Most settings removed - using global defaults from QueryProvider
-    // Global defaults: staleTime: 2min, gcTime: 10min, retry: networkAwareRetry, etc.
   });
 
+  // Posts query (with reader state if logged in)
   const {
     data,
     fetchNextPage,
@@ -56,13 +59,14 @@ export const PostsPageClient = ({ rawParam }) => {
     isLoading,
     error,
   } = useInfiniteQuery({
-    queryKey: queryKeys.userPosts(lookupKey),
+    queryKey: queryKeys.userPosts(lookupKey, userPublicKey),
     queryFn: async ({ pageParam = '' }) => {
       const response = await getPostsForPublicKey({
         PublicKeyBase58Check: isPublicKey ? lookupKey : undefined,
         Username: isPublicKey ? undefined : lookupKey,
         LastPostHashHex: pageParam,
         NumToFetch: POSTS_PER_PAGE,
+        ReaderPublicKeyBase58Check: userPublicKey || undefined,
       });
 
       if (!response.success) {
@@ -75,9 +79,8 @@ export const PostsPageClient = ({ rawParam }) => {
       const posts = lastPage?.Posts || [];
       return posts.length < POSTS_PER_PAGE ? undefined : posts.at(-1)?.PostHashHex;
     },
-    // Using global defaults - much cleaner!
-    // Optional: Only override if you need different behavior for posts
-    staleTime: 1000 * 60, // Optional: 1 minute for posts (vs 2min global default)    
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 60,    // 1 hour    
   });
 
   const loadMoreRef = useRef(null);
@@ -102,30 +105,23 @@ export const PostsPageClient = ({ rawParam }) => {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) return <p>Loading posts...</p>;
-  if (error) return <p style={{ color: 'red' }}>{error.message}</p>;
-
   const posts = data?.pages.flatMap((page) => page.Posts || []) || [];
 
   return (
     <>
-      {/* <h2>
-        Posts by{' '}
-        {userProfile
-          ? userProfile.ExtraData?.DisplayName || userProfile.Username
-          : rawParam}
-      </h2> */}
-
       <UserQuickLinks profile={userProfile} rawParam={rawParam} />
 
-      {posts.length === 0 && <p>No posts found.</p>}
+      {isLoading && posts.length === 0 && <p>Loading posts...</p>}
+      {error && posts.length === 0 && (
+        <p style={{ color: 'red' }}>{error.message}</p>
+      )}
+      {posts.length === 0 && !isLoading && !error && <p>No posts found.</p>}
 
       <div className={styles.postsContainer}>
         {posts.map((post) => (
           <div key={post.PostHashHex}>
             <Post
               post={post}
-              //username={!isPublicKey ? lookupKey : undefined}
               username={rawParam}
               userProfile={userProfile}
             />
@@ -138,3 +134,45 @@ export const PostsPageClient = ({ rawParam }) => {
     </>
   );
 };
+
+/*
+--------------------------------------------------------
+📜 Component Behavior Notes:
+
+- This component loads posts for a given profile (`lookupKey`), 
+  supporting both anonymous and logged-in users.
+
+- When there is a logged-in user, the public key is passed as 
+  `ReaderPublicKeyBase58Check` to the API request. This enables 
+  reader-specific metadata in each post, like:
+    - PostEntryReaderState.LikedByReader
+    - PostEntryReaderState.RepostedByReader
+    - PostEntryReaderState.DiamondLevelBestowed
+
+- The query key includes the reader's public key:
+    queryKeys.userPosts(lookupKey, userPublicKey)
+
+  This ensures separate cache entries for:
+    - Anonymous visitors
+    - Different logged-in users
+
+- On first page load:
+    - Posts load immediately (without waiting for auth check) 
+      as anonymous if the auth state is still being determined.
+
+- Once auth check completes:
+    - If there is a logged-in user, the query refetches with 
+      reader-specific data.
+
+- When switching users:
+    - A new request fires for the new user.
+    - Switching back to a previous user retrieves posts from cache 
+      (unless stale or garbage-collected).
+
+- This approach intentionally favors fast UX with instant 
+  page loads, while gracefully updating reader-specific metadata 
+  when auth changes.
+
+- ✅ Standard for social apps like Twitter, YouTube, etc.
+--------------------------------------------------------
+*/

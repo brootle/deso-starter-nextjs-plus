@@ -7,7 +7,10 @@ export const queryKeys = {
     profileByPublicKey: (publicKey) => ['profile-by-publickey', publicKey],
   
     // Posts
-    userPosts: (lookupKey) => ['user-posts', lookupKey],       // By username or public key
+    //userPosts: (lookupKey) => ['user-posts', lookupKey],       // By username or public key
+    userPosts: (lookupKey, readerPublicKey) => readerPublicKey ? ['user-posts', lookupKey, readerPublicKey] : ['user-posts', lookupKey],
+
+
     singlePost: (postHash) => ['single-post', postHash],       // One post by hash
     postComments: (postHash) => ['comments', postHash],        // Comments for a post
 

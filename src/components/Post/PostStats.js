@@ -32,6 +32,7 @@ export const PostStats = ({ post, username, ProfileEntryResponse, isStatsDisable
     DiamondCount,
     RepostCount,
     QuoteRepostCount,
+    PostEntryReaderState
   } = post;
 
   const router = useRouter();
@@ -200,7 +201,11 @@ export const PostStats = ({ post, username, ProfileEntryResponse, isStatsDisable
         )}
 
         <span className={styles.iconWrapper}>
-          <span>❤️</span>  
+          {PostEntryReaderState?.LikedByReader 
+            ?<span>❤️</span> 
+            :<span>🤍</span> 
+          }
+          {/* <span>❤️</span>   */}
           {LikeCount}
         </span>
         
