@@ -6,10 +6,18 @@ import { queryKeys } from '@/queries';
 import { Page } from "@/components/Page";
 import { Post } from "@/components/Post";
 import { useAuth } from '@/context/AuthContext';
+import { isMaybePublicKey } from '@/utils/profileUtils';
 
 export const SinglePostPageClient = ({ postHash, rawParam }) => {
   const { getSinglePost } = useDeSoApi();
   const { userPublicKey } = useAuth();
+
+  const isPublicKey = isMaybePublicKey(rawParam);
+  const lookupKey = isPublicKey
+    ? rawParam
+    : rawParam.startsWith('@')
+    ? rawParam.slice(1)
+    : rawParam;  
 
   const { data, isLoading, isError, error } = useQuery({
     //queryKey: queryKeys.singlePost(postHash),
@@ -28,8 +36,10 @@ export const SinglePostPageClient = ({ postHash, rawParam }) => {
     // refetchOnReconnect: false (fixes wake-from-sleep), etc.
   });
 
-  const currentFeedPublicKey = data?.PostFound?.PosterPublicKeyBase58Check || userPublicKey;
-
+  const currentFeedPublicKey = isPublicKey
+    ? lookupKey
+    : data?.PosterPublicKeyBase58Check;
+    
   if (isLoading) return <Page><p>Loading post...</p></Page>;
   if (isError) return <Page><p style={{ color: 'red' }}>{error.message}</p></Page>;
   if (!data) return <Page><p>Post not found.</p></Page>;
