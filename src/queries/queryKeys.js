@@ -8,7 +8,10 @@ export const queryKeys = {
   
     // Posts
     //userPosts: (lookupKey) => ['user-posts', lookupKey],       // By username or public key
-    userPosts: (lookupKey, readerPublicKey) => readerPublicKey ? ['user-posts', lookupKey, readerPublicKey] : ['user-posts', lookupKey],
+    userPosts: (lookupKey, readerPublicKey) => 
+        readerPublicKey 
+            ? ['user-posts', lookupKey, readerPublicKey] 
+            : ['user-posts', lookupKey],
 
     //singlePost: (postHash) => ['single-post', postHash],       // One post by hash
     // 🔥 🔗 Updated singlePost to be reader-aware

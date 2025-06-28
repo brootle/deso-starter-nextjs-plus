@@ -105,7 +105,8 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
 
       const newComments = response.data?.PostFound?.Comments || [];
 
-      const existing = queryClient.getQueryData(queryKeys.postComments(PostHashHex));
+      //const existing = queryClient.getQueryData(queryKeys.postComments(PostHashHex));
+      const existing = queryClient.getQueryData(queryKeys.postComments(PostHashHex, userPublicKey));
       const existingHashes = new Set(
         existing?.pages.flatMap(p => p.comments.map(c => c.PostHashHex)) || []
       );
@@ -175,7 +176,8 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
 
     if (!newVisible) {
       // ✅ Promote injected comments to permanent with isPromoted flag
-      queryClient.setQueryData(queryKeys.postComments(PostHashHex), (data) => {
+      // queryClient.setQueryData(queryKeys.postComments(PostHashHex), (data) => {
+      queryClient.setQueryData(queryKeys.postComments(PostHashHex, userPublicKey), (data) => {
         if (!data) return;
 
         const page0 = data.pages[0];
@@ -213,7 +215,8 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
 
       // If we already have server data, just promote local comments without refetching
       if (hasServerData) {
-        queryClient.setQueryData(queryKeys.postComments(PostHashHex), (data) => {
+        //queryClient.setQueryData(queryKeys.postComments(PostHashHex), (data) => {
+          queryClient.setQueryData(queryKeys.postComments(PostHashHex, userPublicKey), (data) => {
           if (!data) return;
 
           const page0 = data.pages[0];
@@ -239,7 +242,8 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
         const promotedComments = existingComments.filter(c => c.isPromoted);
 
         refetch().then(() => {
-          queryClient.setQueryData(queryKeys.postComments(PostHashHex), (newData) => {
+          //queryClient.setQueryData(queryKeys.postComments(PostHashHex), (newData) => {
+          queryClient.setQueryData(queryKeys.postComments(PostHashHex, userPublicKey), (newData) => {
             if (!newData) return;
 
             const serverHashes = new Set(
@@ -400,7 +404,8 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
 
             const commentWithFlag = { ...newReply, isLocal: true };
 
-            queryClient.setQueryData(queryKeys.postComments(PostHashHex), (oldData) => {
+            // queryClient.setQueryData(queryKeys.postComments(PostHashHex), (oldData) => {
+            queryClient.setQueryData(queryKeys.postComments(PostHashHex, userPublicKey), (oldData) => {
               if (!oldData) {
                 return {
                   pages: [{ comments: [commentWithFlag] }],
