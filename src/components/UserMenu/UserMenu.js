@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 
 import Link from 'next/link';
 
+import { useQueryClient } from '@tanstack/react-query'; 
+
 import { useAuth } from "@/context/AuthContext";
 import { useUser } from "@/context/UserContext";
 
@@ -22,6 +24,8 @@ export const UserMenu = () => {
     const { userPublicKey, altUsers, login, logout, setActiveUser, isAuthChecking  } = useAuth();
     const { altUserProfiles, isAltUserProfileSLoading, userProfile } = useUser();
 
+    const queryClient = useQueryClient();
+
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
     const selectFloatingRef = useRef(null);
@@ -30,6 +34,14 @@ export const UserMenu = () => {
     const closeDropdown = () => setIsOpen(false);
 
     const handleUserSelect = (publicKey) => {
+        // 🔥 Invalidate posts and single post cache for ALL users
+        queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+        queryClient.invalidateQueries({ queryKey: ['single-post'] });
+        queryClient.invalidateQueries({ queryKey: ['comments'] });
+
+        // no need to invalidate since posts retured based by reader public key
+        // queryClient.invalidateQueries({ queryKey: ['follow-feed-posts'] }); 
+
         setActiveUser(publicKey);
         closeDropdown();
     };
@@ -40,6 +52,14 @@ export const UserMenu = () => {
     };
 
     const handleLogout = () => {
+        // ✔️ This clears out old data when user logs out.
+        queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+        queryClient.invalidateQueries({ queryKey: ['single-post'] });
+        queryClient.invalidateQueries({ queryKey: ['comments'] });
+
+        // no need to invalidate since posts retured based by reader public key
+        // queryClient.invalidateQueries({ queryKey: ['follow-feed-posts'] }); 
+
         logout();
         closeDropdown();
     };

@@ -50,6 +50,24 @@ export const PostsPageClient = ({ rawParam }) => {
     },
   });
 
+
+  // 🔥 IMPORTANT:
+  // Always fetch user posts by public key, NOT username.
+  // This ensures that the React Query cache key is always consistent.
+  // If we fetch by username, the cache key would be ['user-posts', 'BetaTester', viewer]
+  // but when updating caches (e.g., after a like) we use public key,
+  // resulting in cache key mismatch and the cache not being updated.
+  //
+  // ✅ Fetching by public key guarantees:
+  // - Consistent cache keys across user posts, single post, and follow feed.
+  // - Likes, reposts, diamonds, and comments properly sync between views.
+  // - No edge case where username-based and public key-based caches diverge.
+  //
+  // ✔️ Profile fetching still uses username — that’s fine,
+  // because profile data is cached separately under queryKeys.profileByUsername().  
+
+  const currentFeedPublicKey = isPublicKey ? lookupKey : userProfile?.PublicKeyBase58Check;
+
   // Posts query (with reader state if logged in)
   const {
     data,
@@ -59,11 +77,13 @@ export const PostsPageClient = ({ rawParam }) => {
     isLoading,
     error,
   } = useInfiniteQuery({
-    queryKey: queryKeys.userPosts(lookupKey, userPublicKey),
+    //queryKey: queryKeys.userPosts(lookupKey, userPublicKey),
+    queryKey: queryKeys.userPosts(currentFeedPublicKey, userPublicKey), // 🔥 ✅ Always by public key
     queryFn: async ({ pageParam = '' }) => {
       const response = await getPostsForPublicKey({
-        PublicKeyBase58Check: isPublicKey ? lookupKey : undefined,
-        Username: isPublicKey ? undefined : lookupKey,
+        PublicKeyBase58Check: currentFeedPublicKey, // 🔥 ✅ Always public key
+        //PublicKeyBase58Check: isPublicKey ? lookupKey : undefined,
+        //Username: isPublicKey ? undefined : lookupKey,
         LastPostHashHex: pageParam,
         NumToFetch: POSTS_PER_PAGE,
         ReaderPublicKeyBase58Check: userPublicKey || undefined,
@@ -124,6 +144,7 @@ export const PostsPageClient = ({ rawParam }) => {
               post={post}
               username={rawParam}
               userProfile={userProfile}
+              currentFeedPublicKey={currentFeedPublicKey} 
             />
           </div>
         ))}

@@ -95,10 +95,54 @@ export function AuthProvider({ children }) {
     return await identity.jwt();
   };
 
+
+
+  /**
+   * Checks if the current derived key has permission to perform a specified transaction type (e.g., LIKE, SUBMIT_POST).
+   * If permission is not granted, it opens the DeSo Identity window to request the required permission.
+   *
+   * This function also ensures that the derived key has a sufficient Global DESO spending limit
+   * to cover transaction fees. If the limit is not set or too low, the transaction will fail
+   * with "RuleErrorDerivedKeyTxnSpendsMoreThanGlobalDESOLimit".
+   *
+   * - LIKE transactions are set to 'UNLIMITED' by default since users are likely to perform them frequently.
+   * - Other transaction types default to a count of 1 unless modified.
+   *
+   * ⚠️ Note: This opens the DeSo Identity popup. If the user cancels or closes it, the promise will reject.
+   * You should handle errors when calling this function.
+   *
+   * @param {string} transactionType - The transaction type (e.g., 'LIKE', 'SUBMIT_POST', 'BASIC_TRANSFER').
+   * @param {number} [globalDesoLimit=0.1 * 1e9] - Optional. The Global DESO spending limit (in nanos). Default is 0.1 DESO.
+   * @throws Will throw an error if the Identity window is closed before completing permission request.
+   */
+  const ensureTransactionPermission = async (transactionType, globalDesoLimit = 0.1 * 1e9) => {
+    try {
+      const hasPermission = await identity.hasPermissions({
+        TransactionCountLimitMap: {
+          [transactionType]: 1,
+        },
+      });
+
+      if (!hasPermission) {
+        await identity.requestPermissions({
+          GlobalDESOLimit: globalDesoLimit,
+          TransactionCountLimitMap: {
+            [transactionType]: transactionType === 'LIKE' ? 'UNLIMITED' : 1,
+          },
+        });
+      }
+    } catch (err) {
+      console.error(`Failed to ensure permission for ${transactionType}:`, err);
+      throw err; // Optional: Re-throw to handle higher up, or remove if you want to silently handle
+    }
+  };
+
+
   return (
     <AuthContext.Provider value={{ 
       userPublicKey, login, logout, setActiveUser, altUsers, isAuthChecking,
-      signTransaction, submitTransaction, signAndSubmitTransaction, getIdentityJWT
+      signTransaction, submitTransaction, signAndSubmitTransaction, getIdentityJWT,
+      ensureTransactionPermission
     }}>
       {children}
     </AuthContext.Provider>

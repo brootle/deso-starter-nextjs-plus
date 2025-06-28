@@ -110,7 +110,16 @@ export function useDeSoApi() {
     });
   }, [apiRequest]);
 
-  
+  // this is used to Link/Unlike a post
+  const createLike = useCallback((params) => {
+    return apiRequest({
+      endpoint: "create-like-stateless",
+      options: {
+        body: JSON.stringify(params),
+      },
+    });
+  }, [apiRequest]);    
+
   return {
     getSingleProfile,
     getUsersStateless,
@@ -122,6 +131,7 @@ export function useDeSoApi() {
     getProfiles,
     getPostsStateless,
     getNotifications,
-    uploadImage
+    uploadImage,
+    createLike
   };
 }

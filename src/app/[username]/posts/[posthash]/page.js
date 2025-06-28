@@ -43,7 +43,7 @@ export default async function SinglePostPage({ params }) {
   const PostHashHex = decodeURIComponent(posthash);
 
   const queryClient = createServerQueryClient();
-  const queryKey = queryKeys.singlePost(PostHashHex);
+  const queryKey = queryKeys.singlePost(PostHashHex); // 🔥 For SSR, no userPublicKey — correct
 
   await queryClient.prefetchQuery({
     queryKey,

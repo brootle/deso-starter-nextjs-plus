@@ -5,6 +5,8 @@ import { useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 
+import { useAuth } from '@/context/AuthContext'; 
+
 import { MarkdownText } from '@/components/MarkdownText';
 import { Avatar } from '@/components/Avatar';
 import { isMaybePublicKey } from '@/utils/profileUtils';
@@ -24,7 +26,7 @@ import styles from './Post.module.css';
 
 const COMMENT_LIMIT = 10;
 
-export const Post = ({ post, username, userProfile, isQuote, isComment, isInThread, isHighlighted, isStatsDisabled = false }) => {
+export const Post = ({ post, username, userProfile, isQuote, isComment, isInThread, isHighlighted, currentFeedPublicKey, isStatsDisabled = false }) => {
 
   // Avoid hydration mismatch by skipping render until fully mounted.
   // This prevents server-rendered HTML from differing from client-rendered DOM.  
@@ -45,6 +47,7 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
     PostExtraData
   } = post;
 
+  const { userPublicKey } = useAuth(); 
 
   const { getSinglePost } = useDeSoApi();
   const queryClient = useQueryClient();
@@ -88,12 +91,14 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
     isLoading,
     refetch,
   } = useInfiniteQuery({
-    queryKey: queryKeys.postComments(PostHashHex),
+    //queryKey: queryKeys.postComments(PostHashHex),
+    queryKey: queryKeys.postComments(PostHashHex, userPublicKey),
     queryFn: async ({ pageParam = 0 }) => {
       const response = await getSinglePost({
         PostHashHex,
         CommentOffset: pageParam,
         CommentLimit: COMMENT_LIMIT,
+        ReaderPublicKeyBase58Check: userPublicKey || undefined,
       });
 
       if (!response.success) throw new Error(response.error || 'Failed to fetch comments');
@@ -421,7 +426,7 @@ export const Post = ({ post, username, userProfile, isQuote, isComment, isInThre
               };
             });
           }}
-
+          currentFeedPublicKey={currentFeedPublicKey} 
         />
 
         {/* disable interaction including replies button and don't show any comments */}

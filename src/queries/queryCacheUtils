@@ -1,0 +1,106 @@
+import { queryKeys } from "./queryKeys";
+
+/**
+ * 🔥 Cache Update Helper: updatePostInCache
+ *
+ * Ensures that post-related caches stay in sync when the post is updated (e.g., like, unlike, repost, diamond, comment count).
+ * React Query treats each cache entry as isolated by its query key — meaning that the same post appearing in different feeds
+ * (user posts, follow feed, single post view) lives in separate caches.
+ *
+ * Without this helper, updating a post in one view (e.g., single post) would NOT reflect in other views like the feed
+ * or user posts unless the user refetches or navigates away and back.
+ *
+ * ✅ What This Function Updates:
+ * - 🔥 The current feed being viewed (`user-posts` or `follow-feed-posts` depending on where the user is).
+ * - 🔥 The single post view (`single-post`), which always has its own cache key.
+ * - 🔥 The follow feed cache (`follow-feed-posts`) for the logged-in user if provided.
+ * - 🔥 The user posts cache (`user-posts`) of the post owner (poster) if applicable.
+ *
+ * This ensures that a post's state (like count, repost count, diamond, comment count, or reader reactions like LikedByReader)
+ * is consistently updated across:
+ * - ✅ User posts feed (e.g., `/BetaTester/posts`)
+ * - ✅ Follow feed (e.g., `/userscan/feed`)
+ * - ✅ Single post view (`/BetaTester/posts/[posthash]`)
+ *
+ * 🔥 This matches the UX of major social platforms like Twitter, Threads, or Instagram,
+ * where liking a post updates it instantly in the feed, profile, and detailed view.
+ *
+ * 🚩 IMPORTANT:
+ * - This only updates cached data if the cache exists. It does NOT create cache entries if the user has not visited that view.
+ * - This is purely a UI/cache sync helper. It does not affect backend data — the backend sync happens separately via API calls.
+ *
+ * 📦 Params:
+ * @param {object} queryClient - React Query client instance.
+ * @param {string} PostHashHex - The hash of the post to update.
+ * @param {string} currentFeedPublicKey - The public key of the feed currently being viewed (user profile feed or viewer's own follow feed).
+ * @param {string} userPublicKey - The logged-in viewer's public key.
+ * @param {function} updaterFn - A function that receives the current post object and returns the updated post object.
+ * @param {string} viewerFollowFeedPublicKey - (Optional) The logged-in viewer's public key — used to update their follow feed cache.
+ * @param {string} posterPublicKey - (Optional) The public key of the post owner — used to update the owner's user posts feed cache.
+ */
+export const updatePostInCache = (
+  queryClient,
+  PostHashHex,
+  currentFeedPublicKey,
+  userPublicKey,
+  updaterFn,
+  viewerFollowFeedPublicKey = null,
+  posterPublicKey = null // 🔥 NEW → The post owner
+) => {
+  // 🔥 Update current feed cache
+  const postsCacheKey = queryKeys.userPosts(currentFeedPublicKey, userPublicKey);
+  queryClient.setQueryData(postsCacheKey, (oldData) => {
+    if (!oldData) return oldData;
+    return {
+      ...oldData,
+      pages: oldData.pages.map((page) => ({
+        ...page,
+        Posts: page.Posts.map((post) =>
+          post.PostHashHex === PostHashHex ? updaterFn(post) : post
+        ),
+      })),
+    };
+  });
+
+  // 🔥 Update single post cache
+  const singlePostCacheKey = queryKeys.singlePost(PostHashHex, userPublicKey);
+  queryClient.setQueryData(singlePostCacheKey, (oldPost) => {
+    if (!oldPost) return oldPost;
+    return updaterFn(oldPost);
+  });
+
+  // 🔥 Update viewer’s follow feed cache
+  if (viewerFollowFeedPublicKey) {
+    const followFeedCacheKey = queryKeys.followFeedPosts(viewerFollowFeedPublicKey);
+    queryClient.setQueryData(followFeedCacheKey, (oldData) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page) => ({
+          ...page,
+          PostsFound: page.PostsFound.map((post) =>
+            post.PostHashHex === PostHashHex ? updaterFn(post) : post
+          ),
+        })),
+      };
+    });
+  }
+
+  // 🔥 ✅ NEW: Update post owner's userPosts feed cache
+  if (posterPublicKey && posterPublicKey !== currentFeedPublicKey) {
+    const ownerCacheKey = queryKeys.userPosts(posterPublicKey, userPublicKey);
+    queryClient.setQueryData(ownerCacheKey, (oldData) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page) => ({
+          ...page,
+          Posts: page.Posts.map((post) =>
+            post.PostHashHex === PostHashHex ? updaterFn(post) : post
+          ),
+        })),
+      };
+    });
+  }
+};
+

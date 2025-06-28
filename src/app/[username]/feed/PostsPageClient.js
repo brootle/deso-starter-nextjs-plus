@@ -7,6 +7,8 @@ import { useRef, useEffect } from 'react';
 import { Post } from '@/components/Post';
 import { queryKeys } from '@/queries';
 
+import { useAuth } from '@/context/AuthContext';
+
 import { UserQuickLinks } from '@/components/UserQuickLinks';
 
 import styles from './page.module.css';
@@ -14,6 +16,8 @@ import styles from './page.module.css';
 const POSTS_PER_PAGE = 10;
 
 export const PostsPageClient = ({ rawParam }) => {
+  const { userPublicKey } = useAuth();
+
   const isPublicKey = isMaybePublicKey(rawParam);
   const lookupKey = isPublicKey
     ? rawParam
@@ -114,6 +118,11 @@ export const PostsPageClient = ({ rawParam }) => {
 
   const posts = data?.pages.flatMap((page) => page.PostsFound || []) || [];
 
+  // 🔥 Use the public key from the URL or the profile's PublicKeyBase58Check
+  const currentFeedPublicKey = isPublicKey
+    ? lookupKey
+    : userProfile?.PublicKeyBase58Check;  
+
   return (
     <>
 
@@ -126,6 +135,7 @@ export const PostsPageClient = ({ rawParam }) => {
           <div key={post.PostHashHex}>
             <Post
               post={post} // in this case post will include the profile
+              currentFeedPublicKey={currentFeedPublicKey} 
             />
           </div>
         ))}
