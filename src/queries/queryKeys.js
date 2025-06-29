@@ -21,11 +21,11 @@ export const queryKeys = {
             : ['single-post', postHash],    
 
 
-    // postComments: (postHash) => ['comments', postHash],        // Comments for a post
-    postComments: (postHash, readerPublicKey) => 
-        readerPublicKey 
-            ? ['comments', postHash, readerPublicKey] 
-            : ['comments', postHash],    
+    postComments: (postHash) => ['comments', postHash],        // Comments for a post
+    // postComments: (postHash, readerPublicKey) => 
+    //     readerPublicKey 
+    //         ? ['comments', postHash, readerPublicKey] 
+    //         : ['comments', postHash],    
 
     // Follow feed (posts from followed users)
     followFeedPosts: (publicKey) => ['follow-feed-posts', publicKey], // Feed for a user
