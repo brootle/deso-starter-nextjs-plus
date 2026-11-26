@@ -1,3 +1,5 @@
+import { filterBlockedContent, isBlockedUsername } from '../utils/contentModeration';
+
 // optionally support FormData for file uploads
 export function createApiHandler({ baseUrl }) {
   return async function apiRequest({ endpoint, options = {} }) {
@@ -15,11 +17,15 @@ export function createApiHandler({ baseUrl }) {
     };
 
     try {
+      if (typeof options.body === 'string' &&
+          isBlockedUsername(JSON.parse(options.body)?.Username)) {
+        return { success: false, error: 'This account is unavailable.' };
+      }
       const response = await fetch(`${baseUrl}/${endpoint}`, defaultOptions);
       const data = await response.json();
 
       return response.ok
-        ? { success: true, data }
+        ? { success: true, data: filterBlockedContent(data) }
         : { success: false, error: data?.error || "Unknown API error" };
     } catch (error) {
       return { success: false, error: error?.message || "Network error" };
@@ -53,5 +59,3 @@ export function createApiHandler({ baseUrl }) {
 //     }
 //   };
 // }
-  
-  
