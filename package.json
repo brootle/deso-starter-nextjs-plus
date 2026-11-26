@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:pages": "next-on-pages",
     "start": "next start",
     "lint": "next lint",
     "storybook": "storybook dev -p 6006",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.6",
+    "@cloudflare/next-on-pages": "1.13.16",
     "@eslint/eslintrc": "^3",
     "@storybook/addon-essentials": "^8.6.12",
     "@storybook/addon-onboarding": "^8.6.12",
@@ -42,7 +44,8 @@
     "eslint-plugin-storybook": "^0.12.0",
     "playwright": "^1.52.0",
     "storybook": "^8.6.12",
-    "vitest": "^3.1.2"
+    "vitest": "^3.1.2",
+    "wrangler": "3.114.17"
   },
   "eslintConfig": {
     "extends": [

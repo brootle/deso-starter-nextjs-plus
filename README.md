@@ -207,3 +207,15 @@ During development, several minor issues were identified with the DeSo backend A
 - **Fixed:** A previously reported bug has been addressed. Refer to [this issue](https://github.com/deso-protocol/backend/issues/725) for more information.
 
 If you encounter additional issues, please report them via the appropriate GitHub repository.
+
+## Cloudflare Pages builds
+
+Use `npm run build:pages` as the Cloudflare Pages build command and
+`.vercel/output/static` as the build output directory. Commit both
+`package.json` and `package-lock.json` so dependency installation uses the
+pinned adapter and Wrangler versions.
+
+The existing Pages integration uses `@cloudflare/next-on-pages` 1.13.16 and
+Wrangler 3.114.17. Keep these versions pinned together: fetching the adapter
+with an unpinned Wrangler can cause a Workers types peer dependency conflict
+before the application build starts.
