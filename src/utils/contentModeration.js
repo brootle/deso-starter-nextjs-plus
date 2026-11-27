@@ -1,5 +1,5 @@
 // Local presentation policy; this does not modify records on the DeSo network.
-const blockedUsernames = new Set(['makerdao']);
+const blockedUsernames = new Set(['makerdao', 'bitfinex']);
 
 export function isBlockedUsername(username) {
   return typeof username === 'string' &&
